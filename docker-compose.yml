@@ -1,0 +1,39 @@
+version: '3'
+services:
+
+  web:
+    stdin_open: true
+    tty: true
+    container_name: django-iot-pro
+    build: .
+    ports:
+      - "8000:8000"
+    command: sh -c "python ./manage.py migrate && python ./manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./.:/app
+    restart: always
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+      - timescale
+
+  db:
+    image: postgres:13
+    restart: on-failure
+    environment:
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_USER: "iotuser"
+      POSTGRES_DB: "postgres"
+
+  timescale:
+    image: timescale/timescaledb-ha:pg14-latest
+    restart: always
+    ports:
+      - 8086:5432
+    volumes:
+      - ./timescaledbdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DATABASE}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
